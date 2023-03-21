@@ -12,13 +12,63 @@ def timecheck(func):
 	return _wrapper
 
 
+def apply_filters(opt, img1_name, img2=None, channels="RGB"):
+	if opt == "None":
+		return channelImage(img1_name, channels)
+	elif opt == "Square mask image":
+		return maskImage(img1_name, "S", channels)
+	elif opt == "Circle mask image":
+		return maskImage(img1_name, "C", channels)
+	elif opt == "Add":
+		return sumImage(img1_name, img2, channels)
+	elif opt == "Multiply":
+		return multImage(img1_name, img2, channels)
+	elif opt == "Max":
+		return maxImage(img1_name, img2, channels)
+	elif opt == "Min":
+		return minImage(img1_name, img2, channels)
+	elif opt == "Average":
+		return avgImage(img1_name, img2, channels)
+	else:
+		return None
+
+
 @timecheck
-def sumImage(img1_name, img2_name):
-	if img1_name is None or img2_name is None:
+def channelImage(img1_name, channels):
+	if img1_name is None:
 		return None
 
 	img1 = Image.open(img1_name)
-	img2 = Image.open(img2_name)
+
+	if channels == "RGB":
+		return img1
+
+	out = Image.new("RGB", img1.size)
+
+	pixels = img1.load()
+
+	pixels_out = out.load()
+
+	for x in range(img1.width):
+		for y in range(img1.height):
+			r, g, b = pixels[x, y]
+
+			r_out = r if "R" in channels else 0
+			g_out = g if "G" in channels else 0
+			b_out = b if "B" in channels else 0
+
+			pixels_out[x, y] = (r_out, g_out, b_out)
+
+	img1.close()
+	return out
+
+
+@timecheck
+def sumImage(img1_name, img2, channels="RGB"):
+	if img1_name is None:
+		return None
+
+	img1 = Image.open(img1_name)
 
 	img1, img2 = rescale_image(img1, img2)
 
@@ -37,28 +87,23 @@ def sumImage(img1_name, img2_name):
 			r1, g1, b1 = pixels1[x, y]
 			r2, g2, b2 = pixels2[x, y]
 
-			r_out = min(r1+r2, 255)
-			g_out = min(g1+g2, 255)
-			b_out = min(b1+b2, 255)
+			r_out = min(r1+r2, 255) if "R" in channels else 0
+			g_out = min(g1+g2, 255) if "G" in channels else 0
+			b_out = min(b1+b2, 255) if "B" in channels else 0
 
 			pixels_out[x, y] = (r_out, g_out, b_out)
 
-	output_name = 'img/out_' + str(int(time())) + '.jpg'
-	print('saving output image into ' + output_name)
-	out.save(output_name)
-	out.close()
 	img1.close()
 	img2.close()
-	return output_name
+	return out
 
 
 @timecheck
-def avgImage(img1_name, img2_name):
-	if img1_name is None or img2_name is None:
+def avgImage(img1_name, img2, channels="RGB"):
+	if img1_name is None:
 		return None
 
 	img1 = Image.open(img1_name)
-	img2 = Image.open(img2_name)
 
 	img1, img2 = rescale_image(img1, img2)
 
@@ -73,32 +118,27 @@ def avgImage(img1_name, img2_name):
 	pixels_out = out.load()
 
 	for x in range(img1.width):
-		for y in range(img2.height):
+		for y in range(img1.height):
 			r1, g1, b1 = pixels1[x, y]
 			r2, g2, b2 = pixels2[x, y]
 
-			r_out = (r1+r2)//2
-			g_out = (g1+g2)//2
-			b_out = (b1+b2)//2
+			r_out = (r1+r2)//2 if "R" in channels else 0
+			g_out = (g1+g2)//2 if "G" in channels else 0
+			b_out = (b1+b2)//2 if "B" in channels else 0
 
 			pixels_out[x, y] = (r_out, g_out, b_out)
 
-	output_name = 'img/out_' + str(int(time())) + '.jpg'
-	print('saving output image into ' + output_name)
-	out.save(output_name)
-	out.close()
 	img1.close()
 	img2.close()
-	return output_name
+	return out
 
 
 @timecheck
-def maxImage(img1_name, img2_name):
-	if img1_name is None or img2_name is None:
+def maxImage(img1_name, img2, channels="RGB"):
+	if img1_name is None:
 		return None
 
 	img1 = Image.open(img1_name)
-	img2 = Image.open(img2_name)
 
 	img1, img2 = rescale_image(img1, img2)
 
@@ -113,32 +153,27 @@ def maxImage(img1_name, img2_name):
 	pixels_out = out.load()
 
 	for x in range(img1.width):
-		for y in range(img2.height):
+		for y in range(img1.height):
 			r1, g1, b1 = pixels1[x, y]
 			r2, g2, b2 = pixels2[x, y]
 
-			r_out = max(r1, r2)
-			g_out = max(g1, g2)
-			b_out = max(b1, b2)
+			r_out = max(r1, r2) if "R" in channels else 0
+			g_out = max(g1, g2) if "G" in channels else 0
+			b_out = max(b1, b2) if "B" in channels else 0
 
 			pixels_out[x, y] = (r_out, g_out, b_out)
 
-	output_name = 'img/out_' + str(int(time())) + '.jpg'
-	print('saving output image into ' + output_name)
-	out.save(output_name)
-	out.close()
 	img1.close()
 	img2.close()
-	return output_name
+	return out
 
 
 @timecheck
-def minImage(img1_name, img2_name):
-	if img1_name is None or img2_name is None:
+def minImage(img1_name, img2, channels="RGB"):
+	if img1_name is None:
 		return None
 
 	img1 = Image.open(img1_name)
-	img2 = Image.open(img2_name)
 
 	img1, img2 = rescale_image(img1, img2)
 
@@ -153,32 +188,27 @@ def minImage(img1_name, img2_name):
 	pixels_out = out.load()
 
 	for x in range(img1.width):
-		for y in range(img2.height):
+		for y in range(img1.height):
 			r1, g1, b1 = pixels1[x, y]
 			r2, g2, b2 = pixels2[x, y]
 
-			r_out = min(r1, r2)
-			g_out = min(g1, g2)
-			b_out = min(b1, b2)
+			r_out = min(r1, r2) if "R" in channels else 0
+			g_out = min(g1, g2) if "G" in channels else 0
+			b_out = min(b1, b2) if "B" in channels else 0
 
 			pixels_out[x, y] = (r_out, g_out, b_out)
 
-	output_name = 'img/out_' + str(int(time())) + '.jpg'
-	print('saving output image into ' + output_name)
-	out.save(output_name)
-	out.close()
 	img1.close()
 	img2.close()
-	return output_name
+	return out
 
 
 @timecheck
-def multImage(img1_name, img2_name):
-	if img1_name is None or img2_name is None:
+def multImage(img1_name, img2, channels="RGB"):
+	if img1_name is None:
 		return None
 
 	img1 = Image.open(img1_name)
-	img2 = Image.open(img2_name)
 
 	img1, img2 = rescale_image(img1, img2)
 
@@ -193,23 +223,19 @@ def multImage(img1_name, img2_name):
 	pixels_out = out.load()
 
 	for x in range(img1.width):
-		for y in range(img2.height):
+		for y in range(img1.height):
 			r1, g1, b1 = pixels1[x, y]
 			r2, g2, b2 = pixels2[x, y]
 
-			r_out = r1*r2//255
-			g_out = g1*g2//255
-			b_out = b1*b2//255
+			r_out = r1*r2//255 if "R" in channels else 0
+			g_out = g1*g2//255 if "G" in channels else 0
+			b_out = b1*b2//255 if "B" in channels else 0
 
 			pixels_out[x, y] = (r_out, g_out, b_out)
 
-	output_name = 'img/out_' + str(int(time())) + '.jpg'
-	print('saving output image into ' + output_name)
-	out.save(output_name)
-	out.close()
 	img1.close()
 	img2.close()
-	return output_name
+	return out
 
 
 @timecheck
@@ -243,13 +269,9 @@ def maskImage(img_name, mask_mode, channels="RGB"):
 
 			pixels_out[x, y] = (r_out, g_out, b_out)
 
-	output_name = 'img/out_' + str(int(time())) + '.jpg'
-	print('saving output image into ' + output_name)
-	out.save(output_name)
 	img.close()
 	mask.close()
-	out.close()
-	return output_name
+	return out
 
 
 @timecheck
