@@ -1,0 +1,5 @@
+vemv/*
+img/*
+__pycache__/*
+test.py
+*.DS_Store
