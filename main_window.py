@@ -2,7 +2,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QHBoxLayout,
 							QLabel, QMainWindow, QSizePolicy, QSlider,
-							QVBoxLayout, QWidget, QPushButton, QFrame)
+							QVBoxLayout, QWidget, QPushButton, QFrame,
+							QDesktopWidget)
 import img_process as imgp
 from image_panel import ImagePanel
 from gisto import GistoWindow, GistoWidget
@@ -25,14 +26,9 @@ class MainWindow(QMainWindow):
 		# Create the out image label and connect to its layout
 		self.out_layout = QVBoxLayout()
 		self.out_label = QLabel(self)
-		self.out_label.setFixedSize(400, 400)
+		self.out_label.setFixedSize(400, 300)
 		self.out_label.setAlignment(Qt.AlignCenter)
 		self.out_layout.addWidget(self.out_label)
-
-		# Create widget to display a histogram
-		self.gistogram_widget = QWidget()
-		self.gistogram_widget.setFixedSize(400, 150)
-		self.out_layout.addWidget(self.gistogram_widget)
 
 		# Create label for timing and connect to out layout
 		self.time_label = QLabel(self)
@@ -86,6 +82,8 @@ class MainWindow(QMainWindow):
 		# Set the window properties
 		self.setWindowTitle("Image Processing")
 		self.setGeometry(100, 100, 800, 800)
+		desktop = QDesktopWidget().availableGeometry()
+		self.setFixedSize(800, desktop.height()-28)
 
 	def add_image_from_file(self):
 		# Open a file dialog to select an image file
@@ -107,8 +105,12 @@ class MainWindow(QMainWindow):
 			if self.gistogram:
 				self.gistogram.deleteLater()
 
-			self.gistogram = GistoWidget(self.gistogram_widget, file_name)
+			self.gistogram = GistoWidget(image_path=file_name)
 			self.gistogram.showGistogram()
+			self.gistogram.setFixedSize(350, 300)
+			# self.out_layout.addWidget(self.gistogram)
+			self.out_layout.insertWidget(1, self.gistogram)
+
 			image = QImage(file_name)
 			image = self.scale_image(image, 250, 250)
 			self.out_label.setPixmap(QPixmap.fromImage(image))
@@ -162,7 +164,7 @@ class MainWindow(QMainWindow):
 
 	def new_gisto_window(self):
 		if self.gisto_window is None and self.image_out_path:
-			self.gisto_window = GistoWindow(self, self.image_out_path)
+			self.gisto_window = GistoWindow(self)
 			self.gisto_window.show()
 			self.gisto_window.closeEvent = lambda event: self.on_gisto_window_closed(event)
 

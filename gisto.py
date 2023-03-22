@@ -3,8 +3,10 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
 from PIL import Image
 import matplotlib.pyplot as plt
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QBrush, QColor
+from PyQt5.QtGui import QBrush, QColor, QPen
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import numpy as np
+
 
 class GistoWidget(QWidget):
 	def __init__(self, parent=None, image_path=None):
@@ -18,25 +20,16 @@ class GistoWidget(QWidget):
 	def gistogram(self):
 		if self.image_path:
 			img = Image.open(self.image_path)
-
-			img = img.convert('L')
-
-			count = [0] * 256
-
-			for x in range(img.width):
-				for y in range(img.height):
-					pixel_value = img.getpixel((x, y))
-					count[pixel_value] += 1
-
-			return count
+			img_arr = np.asarray(img)
+			return img_arr.flatten()
 
 	def showGistogram(self):
 		count = self.gistogram()
-		if count:
-			print("hello")
-		
+		if count.any():
 			fig, ax = plt.subplots()
-			ax.hist(count, density=True, bins=range(256))
+			ax.hist(count, bins=256, range=(0, 256), color='gray')
+			ax.set_xticklabels([])
+			ax.set_yticklabels([])
 
 			canvas = FigureCanvas(fig)
 			canvas.setParent(self.plot_widget)
@@ -46,76 +39,37 @@ class GistoWidget(QWidget):
 
 
 class GistoWindow(QMainWindow):
-	def __init__(self, parent=None, image_path=None):
+	def __init__(self, parent=None):
 		super().__init__(parent)
-
-		self.image_path = image_path
 
 		self.main_widget = QWidget()
 		self.main_layout = QVBoxLayout(self.main_widget)
 
-		# self.showGistogram()
-
-		self.plot_widget = None
-
-		self.stacked_widget = QStackedWidget()
-		self.stacked_widget.setGeometry(0, 0, 400, 300)
-
 		self.graphics_view = QGraphicsView()
 		self.scene = QGraphicsScene()
-		self.scene.setBackgroundBrush(QBrush(QColor(0, 0, 0, 0)))
+		self.scene.setBackgroundBrush(QBrush(QColor(255, 255, 255, 255)))
 		self.graphics_view.setScene(self.scene)
-		self.scene.addRect(0, 0, 100, 100, Qt.black)
-		self.scene.addEllipse(50, 50, 100, 100, Qt.red)
+		self.scene.addLine(0, 0, 100, 100, Qt.black)
 		self.graphics_view.setStyleSheet("background-color: rgba(0,0,0,0);")
-		# self.stacked_widget.addWidget(self.graphics_view)
 
-		# Raise the graphics view to the front
-		self.stacked_widget.setCurrentWidget(self.graphics_view)
+		scene_rect = self.scene.sceneRect()
+		scene_x = scene_rect.x()
+		scene_y = scene_rect.y()
+		scene_width = scene_rect.width()
+		scene_height = scene_rect.height()
+
+		pen = QPen(Qt.SolidLine)
+		pen.setWidth(2)
+		pen.setColor(Qt.black)
+
+		# Add the line to the scene
+		self.scene.addLine(0, scene_height, scene_width, 0, pen)
 
 		# Set the main widget and layout
 		self.setCentralWidget(self.main_widget)
 
-		self.main_layout.addWidget(self.stacked_widget)
+		self.main_layout.addWidget(self.graphics_view)
 
 		# Set the window properties
 		self.setWindowTitle("Gistogram Window")
-		self.setGeometry(300, 300, 400, 300)
-
-	def gistogram(self):
-		if self.image_path:
-			img = Image.open(self.image_path)
-
-			img = img.convert('L')
-
-			count = [0] * 256
-
-			for x in range(img.width):
-				for y in range(img.height):
-					pixel_value = img.getpixel((x, y))
-					count[pixel_value] += 1
-
-			return count
-
-	def showGistogram(self):
-		count = self.gistogram()
-		if count:
-			print(self.stacked_widget.count())
-			# Create a new plot widget and add it to the stacked widget
-			plot_widget = QWidget(self)
-			# self.setCentralWidget(plot_widget)
-
-			fig, ax = plt.subplots()
-			ax.hist(count, density=True, bins=range(256))
-
-			canvas = FigureCanvas(fig)
-			canvas.setParent(plot_widget)
-
-			self.stacked_widget.addWidget(canvas)
-			
-			# Remove the previous widget and set the new one as the current widget
-			if self.plot_widget:
-				self.stacked_widget.removeWidget(self.plot_widget)
-				self.plot_widget.deleteLater()
-			self.plot_widget = plot_widget
-
+		self.setGeometry(300, 300, 400, 400)
