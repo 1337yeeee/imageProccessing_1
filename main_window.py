@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (QApplication, QFileDialog, QHBoxLayout,
 							QVBoxLayout, QWidget, QPushButton, QFrame)
 import img_process as imgp
 from image_panel import ImagePanel
+from gisto import GistoWindow, GistoWidget
 from functools import partial
 from time import time
 
@@ -14,6 +15,8 @@ class MainWindow(QMainWindow):
 		super().__init__()
 
 		self.image_out_path = None
+		self.gisto_window = None
+		self.gistogram = None
 
 		# Create the main widget and layout
 		self.main_widget = QWidget()
@@ -25,6 +28,11 @@ class MainWindow(QMainWindow):
 		self.out_label.setFixedSize(400, 400)
 		self.out_label.setAlignment(Qt.AlignCenter)
 		self.out_layout.addWidget(self.out_label)
+
+		# Create widget to display a histogram
+		self.gistogram_widget = QWidget()
+		self.gistogram_widget.setFixedSize(400, 150)
+		self.out_layout.addWidget(self.gistogram_widget)
 
 		# Create label for timing and connect to out layout
 		self.time_label = QLabel(self)
@@ -66,6 +74,12 @@ class MainWindow(QMainWindow):
 		magic_out_action = magic_menu.addAction("Out image")
 		magic_out_action.triggered.connect(lambda: self.open_image_out("img/in2.jpg"))
 
+		gisto_menu = self.menuBar().addMenu("&Gisto")
+		gisto_action = gisto_menu.addAction("Open gisto window")
+		gisto_action.triggered.connect(self.new_gisto_window)
+		gisto_make_action = gisto_menu.addAction("Make")
+		gisto_make_action.triggered.connect(self.make_gisto_)
+
 		# Set the main widget and layout
 		self.setCentralWidget(self.main_widget)
 
@@ -89,6 +103,12 @@ class MainWindow(QMainWindow):
 	def open_image_out(self, file_name):
 		if file_name:
 			self.image_out_path = file_name
+
+			if self.gistogram:
+				self.gistogram.deleteLater()
+
+			self.gistogram = GistoWidget(self.gistogram_widget, file_name)
+			self.gistogram.showGistogram()
 			image = QImage(file_name)
 			image = self.scale_image(image, 250, 250)
 			self.out_label.setPixmap(QPixmap.fromImage(image))
@@ -139,3 +159,17 @@ class MainWindow(QMainWindow):
 			print('saving output image into ' + output_name)
 			out.save(output_name)
 			self.open_image_out(output_name)
+
+	def new_gisto_window(self):
+		if self.gisto_window is None and self.image_out_path:
+			self.gisto_window = GistoWindow(self, self.image_out_path)
+			self.gisto_window.show()
+			self.gisto_window.closeEvent = lambda event: self.on_gisto_window_closed(event)
+
+	def on_gisto_window_closed(self, event):
+		self.gisto_window = None
+		event.accept()
+
+	def make_gisto_(self):
+		if isinstance(self.gisto_window, GistoWindow):
+			self.gisto_window.showGistogram()
