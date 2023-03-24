@@ -1,6 +1,7 @@
 from PIL import Image
 from time import time
 from math import sqrt
+import numpy as np
 
 
 def timecheck(func):
@@ -312,35 +313,57 @@ def rescale_image(img1, img2):
 
 	return img1.resize((w, h)), img2.resize((w, h))
 
+# @timecheck
+# def grad_transform(img_name: str, points: dict[float, float]):
+# 	if img_name is None:
+# 		return None
+
+# 	img = Image.open(img_name)
+# 	pixels = img.load()
+
+# 	out = Image.new("RGB", img.size)
+# 	pixels_out = out.load()
+
+# 	new_brightness = {}
+# 	for x in range(256):
+# 		new_brightness[x] = bezier_curve(x, points)
+
+# 	for x in range(img.width):
+# 		for y in range(img.height):
+# 			r, g, b = pixels[x, y]
+# 			brightness = (r+g+b)//3
+
+# 			nb = new_brightness[brightness]
+# 			r_out = min(int(r*nb/brightness), 255) if brightness else 0
+# 			g_out = min(int(g*nb/brightness), 255) if brightness else 0
+# 			b_out = min(int(b*nb/brightness), 255) if brightness else 0
+
+# 			pixels_out[x, y] = (r_out, g_out, b_out)
+
+# 	img.close()
+# 	return out
+
+# works 10! times faster
 @timecheck
 def grad_transform(img_name: str, points: dict[float, float]):
-	if img_name is None:
-		return None
-
-	img = Image.open(img_name)
-	pixels = img.load()
-
-	out = Image.new("RGB", img.size)
-	pixels_out = out.load()
-
-	new_brightness = {}
-	for x in range(256):
-		new_brightness[x] = bezier_curve(x, points)
-
-	for x in range(img.width):
-		for y in range(img.height):
-			r, g, b = pixels[x, y]
-			brightness = (r+g+b)//3
-
-			nb = new_brightness[brightness]
-			r_out = min(int(r*nb/brightness), 255) if brightness else 0
-			g_out = min(int(g*nb/brightness), 255) if brightness else 0
-			b_out = min(int(b*nb/brightness), 255) if brightness else 0
-
-			pixels_out[x, y] = (r_out, g_out, b_out)
-
-	img.close()
-	return out
+    if img_name is None:
+        return None
+    
+    img = Image.open(img_name)
+    pixels = np.array(img)
+    
+    unique_brightness = np.unique(pixels.sum(axis=2)//3)
+    new_brightness = np.vectorize(bezier_curve)(unique_brightness, points)
+    
+    pixels_out = np.empty_like(pixels)
+    pixels_out[:,:,0] = np.interp(pixels[:,:,0], unique_brightness, new_brightness)
+    pixels_out[:,:,1] = np.interp(pixels[:,:,1], unique_brightness, new_brightness)
+    pixels_out[:,:,2] = np.interp(pixels[:,:,2], unique_brightness, new_brightness)
+    
+    out = Image.fromarray(pixels_out, mode="RGB")
+    
+    img.close()
+    return out
 
 
 def bezier_curve(x: float, points: dict[float, float]) -> float:
@@ -361,4 +384,3 @@ def bezier_curve(x: float, points: dict[float, float]) -> float:
 				return (1-t)**3 * P0 + 3*(1-t)**2 * t * P1 + 3*(1-t) * t**2 * P2 + t**3 * P3
 		# если x не попадает ни в один из отрезков, возвращаем None или вызываем исключение
 		return None
-
