@@ -1,11 +1,12 @@
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
-	QVBoxLayout, QGraphicsView, QStackedWidget, QGraphicsScene)
+from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout,
+	QGraphicsView, QGraphicsScene)
 from PIL import Image
 import matplotlib.pyplot as plt
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QBrush, QColor, QPen
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
+from gist_scene import GistoScene
 
 
 class GistoWidget(QWidget):
@@ -45,25 +46,11 @@ class GistoWindow(QMainWindow):
 		self.main_widget = QWidget()
 		self.main_layout = QVBoxLayout(self.main_widget)
 
+		# Creating the scene
 		self.graphics_view = QGraphicsView()
-		self.scene = QGraphicsScene()
-		self.scene.setBackgroundBrush(QBrush(QColor(255, 255, 255, 255)))
+		self.scene = GistoScene()
 		self.graphics_view.setScene(self.scene)
-		self.scene.addLine(0, 0, 100, 100, Qt.black)
 		self.graphics_view.setStyleSheet("background-color: rgba(0,0,0,0);")
-
-		scene_rect = self.scene.sceneRect()
-		scene_x = scene_rect.x()
-		scene_y = scene_rect.y()
-		scene_width = scene_rect.width()
-		scene_height = scene_rect.height()
-
-		pen = QPen(Qt.SolidLine)
-		pen.setWidth(2)
-		pen.setColor(Qt.black)
-
-		# Add the line to the scene
-		self.scene.addLine(0, scene_height, scene_width, 0, pen)
 
 		# Set the main widget and layout
 		self.setCentralWidget(self.main_widget)
@@ -73,3 +60,6 @@ class GistoWindow(QMainWindow):
 		# Set the window properties
 		self.setWindowTitle("Gistogram Window")
 		self.setGeometry(300, 300, 400, 400)
+
+	def get_scene_points(self):
+		return self.scene.get_points()

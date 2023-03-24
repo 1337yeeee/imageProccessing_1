@@ -156,11 +156,8 @@ class MainWindow(QMainWindow):
 
 		# if out image is gotten, creating a name for the image, saving it
 		# then opening it to display on the window
-		if out:
-			output_name = 'img/out_' + str(int(time())) + '.jpg'
-			print('saving output image into ' + output_name)
-			out.save(output_name)
-			self.open_image_out(output_name)
+		self.save_output(out)
+
 
 	def new_gisto_window(self):
 		if self.gisto_window is None and self.image_out_path:
@@ -174,4 +171,20 @@ class MainWindow(QMainWindow):
 
 	def make_gisto_(self):
 		if isinstance(self.gisto_window, GistoWindow):
-			self.gisto_window.showGistogram()
+			points = self.gisto_window.get_scene_points()
+			t1 = time()
+			out = imgp.grad_transform(self.image_out_path, points)
+			self.time_label.setText("%.6f seconds"%(time()-t1))
+			self.save_output(out)
+
+	def save_output(self, out_img, name=None):
+		if not out_img:
+			pass
+
+		if name is None:
+			name = 'img/out_' + str(int(time())) + '.jpg'
+
+		print('saving output image into ' + name)
+		out_img.save(name)
+		self.open_image_out(name)
+

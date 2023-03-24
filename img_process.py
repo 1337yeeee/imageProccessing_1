@@ -312,3 +312,53 @@ def rescale_image(img1, img2):
 
 	return img1.resize((w, h)), img2.resize((w, h))
 
+@timecheck
+def grad_transform(img_name: str, points: dict[float, float]):
+	if img_name is None:
+		return None
+
+	img = Image.open(img_name)
+	pixels = img.load()
+
+	out = Image.new("RGB", img.size)
+	pixels_out = out.load()
+
+	new_brightness = {}
+	for x in range(256):
+		new_brightness[x] = bezier_curve(x, points)
+
+	for x in range(img.width):
+		for y in range(img.height):
+			r, g, b = pixels[x, y]
+			brightness = (r+g+b)//3
+
+			nb = new_brightness[brightness]
+			r_out = min(int(r*nb/brightness), 255) if brightness else 0
+			g_out = min(int(g*nb/brightness), 255) if brightness else 0
+			b_out = min(int(b*nb/brightness), 255) if brightness else 0
+
+			pixels_out[x, y] = (r_out, g_out, b_out)
+
+	img.close()
+	return out
+
+
+def bezier_curve(x: float, points: dict[float, float]) -> float:
+	keys = sorted(points.keys())
+	if len(keys) == 2:
+		dx = keys[1]-keys[0]
+		dy = points[keys[1]] - points[keys[0]]
+		# уравнение прямой между двумя точками
+		return dy * (x-keys[0]) / dx + points[keys[0]]
+	else:
+		for i in range(len(keys) - 1):
+			if keys[i] <= x <= keys[i+1]:
+				t = (x - keys[i]) / (keys[i+1] - keys[i])
+				P0 = points[keys[i]]
+				P1 = points[keys[i]] + (points[keys[i+1]] - points[keys[i]]) // 3
+				P2 = points[keys[i]] + 2 * (points[keys[i+1]] - points[keys[i]]) // 3
+				P3 = points[keys[i+1]]
+				return (1-t)**3 * P0 + 3*(1-t)**2 * t * P1 + 3*(1-t) * t**2 * P2 + t**3 * P3
+		# если x не попадает ни в один из отрезков, возвращаем None или вызываем исключение
+		return None
+
