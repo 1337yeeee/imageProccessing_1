@@ -29,7 +29,8 @@ class GistoScene(QGraphicsScene):
 
 			if point_x in self.points:
 				point_y = self.points[point_x]
-				if point_y-10 <= y <= point_y+10:
+				if ((point_y-10 <= y <= point_y+10) and
+					point_x!=0 and point_x!=300):
 					del self.points[point_x]
 				else:
 					self.points[point_x] = y
