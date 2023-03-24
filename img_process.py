@@ -240,67 +240,68 @@ def multImage(img1_name, img2, channels="RGB"):
 
 
 @timecheck
-def maskImage(img_name, mask_mode, channels="RGB"):
-	if img_name is None:
-		return None
-
-	img = Image.open(img_name)
-	w = max(img.width, img.height)
-
-	if mask_mode == "C":
-		make_circle_mask(w)
-	elif mask_mode == "S":
-		make_square_mask(w)
-
-	out = Image.new("RGB", img.size)
-	mask = Image.open("img/mask.jpg")
-
-	img_pixels = img.load()
-	mask_pixels = mask.load()
-	pixels_out = out.load()
-
-	for x in range(img.width):
-		for y in range(img.height):
-			r, g, b = img_pixels[x, y]
-			rm, gm, bm = mask_pixels[x, y]
-
-			r_out = r*rm//255 if "R" in channels else r
-			g_out = g*gm//255 if "G" in channels else g
-			b_out = b*bm//255 if "B" in channels else b
-
-			pixels_out[x, y] = (r_out, g_out, b_out)
-
-	img.close()
-	mask.close()
-	return out
-
-
-@timecheck
-def make_circle_mask(w):
-	mask = Image.new("RGB", (w, w))
+def make_circle_mask(w, transparency=0):
+	mask = Image.new("RGBA", (w, w), (255, 255, 255, 255))
 
 	pixels_out = mask.load()
 
 	for x in range(mask.width):
 		for y in range(mask.width):
-			c = 255 - int(255 * sqrt((abs(x-w/2))**2 + (abs(y-w/2))**2) / (w/2))
-			pixels_out[x, y] = (c, c, c)
+			distance = sqrt((abs(x-w/2))**2 + (abs(y-w/2))**2)
+			if distance > w/2:
+				c = 0
+			else:
+				c = 255 - int(255 * distance / (w/2))
+			pixels_out[x, y] = (c, c, c, int(255 * transparency))
 
-	mask.save("img/mask.jpg")
+	mask.save("img/mask.png")
 
 
 @timecheck
-def make_square_mask(w):
-	mask = Image.new("RGB", (w, w))
+def make_square_mask(w, transparency=0):
+	mask = Image.new("RGBA", (w, w), (255, 255, 255, 255))
 
 	pixels_out = mask.load()
 
 	for x in range(mask.width):
 		for y in range(mask.width):
-			c = 255 - int(255 * max(abs(x-w/2), abs(y-w/2)) / (w/2))
-			pixels_out[x, y] = (c, c, c)
+			distance = max(abs(x-w/2), abs(y-w/2))
+			if distance > w/2:
+				c = 0
+			else:
+				c = 255 - int(255 * distance / (w/2))
+			pixels_out[x, y] = (c, c, c, int(255 * transparency))
 
-	mask.save("img/mask.jpg")
+	mask.save("img/mask.png")
+
+
+@timecheck
+def maskImage(img_name, mask_mode, channels="RGB", mask_transparency=0.5):
+    if img_name is None:
+        return None
+
+    img = Image.open(img_name)
+    w = max(img.width, img.height)
+
+    if mask_mode == "C":
+        make_circle_mask(w, transparency=mask_transparency)
+    elif mask_mode == "S":
+        make_square_mask(w, transparency=mask_transparency)
+
+    out = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    mask = Image.open("img/mask.png")
+
+    mask_x = int((img.width - mask.width) / 2)
+    mask_y = int((img.height - mask.height) / 2)
+
+    out.paste(img, (0, 0))
+    out.paste(mask, (mask_x, mask_y), mask)
+
+    out = out.convert("RGB")
+
+    img.close()
+    mask.close()
+    return out
 
 
 @timecheck
@@ -346,24 +347,24 @@ def rescale_image(img1, img2):
 # works 10! times faster
 @timecheck
 def grad_transform(img_name: str, points: dict[float, float]):
-    if img_name is None:
-        return None
-    
-    img = Image.open(img_name)
-    pixels = np.array(img)
-    
-    unique_brightness = np.unique(pixels.sum(axis=2)//3)
-    new_brightness = np.vectorize(bezier_curve)(unique_brightness, points)
-    
-    pixels_out = np.empty_like(pixels)
-    pixels_out[:,:,0] = np.interp(pixels[:,:,0], unique_brightness, new_brightness)
-    pixels_out[:,:,1] = np.interp(pixels[:,:,1], unique_brightness, new_brightness)
-    pixels_out[:,:,2] = np.interp(pixels[:,:,2], unique_brightness, new_brightness)
-    
-    out = Image.fromarray(pixels_out, mode="RGB")
-    
-    img.close()
-    return out
+	if img_name is None:
+		return None
+	
+	img = Image.open(img_name)
+	pixels = np.array(img)
+	
+	unique_brightness = np.unique(pixels.sum(axis=2)//3)
+	new_brightness = np.vectorize(bezier_curve)(unique_brightness, points)
+	
+	pixels_out = np.empty_like(pixels)
+	pixels_out[:,:,0] = np.interp(pixels[:,:,0], unique_brightness, new_brightness)
+	pixels_out[:,:,1] = np.interp(pixels[:,:,1], unique_brightness, new_brightness)
+	pixels_out[:,:,2] = np.interp(pixels[:,:,2], unique_brightness, new_brightness)
+	
+	out = Image.fromarray(pixels_out, mode="RGB")
+	
+	img.close()
+	return out
 
 
 def bezier_curve(x: float, points: dict[float, float]) -> float:
