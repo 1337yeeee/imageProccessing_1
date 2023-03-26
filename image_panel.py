@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QLabel,
-	QComboBox, QScrollArea, QFrame, QPushButton, QSlider, QFrame)
+	QComboBox, QScrollArea, QFrame, QPushButton, QSlider, QFrame, QLineEdit)
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, QSize
+from mask_menu import MaskMenu
 
 
 class ImageWidget(QWidget):
@@ -102,6 +103,21 @@ class ImagePanel(QWidget):
 	def __init__(self, parent=None):
 		super().__init__(parent)
 
+		# Create mask_layout
+		self.mask_layout = QHBoxLayout()
+		self.mask_label = QLabel()
+		self.mask_label.setText("Mask transparency")
+		self.mask_label.setContentsMargins(5,0,5,0)
+		self.mask_field = QLineEdit()
+		self.mask_field.setInputMask(".99")
+		self.mask_field.setText(".50")
+		self.mask_field.setFixedWidth(50)
+		self.mask_layout.addStretch(1)
+		self.mask_layout.addWidget(self.mask_label)
+		self.mask_layout.addSpacing(5) 
+		self.mask_layout.addWidget(self.mask_field)
+		self.mask_layout.addStretch(1)
+
 		# Create a QScrollArea and set its properties
 		self.scroll_area = QScrollArea(self)
 		self.scroll_area.setWidgetResizable(True)
@@ -122,6 +138,7 @@ class ImagePanel(QWidget):
 
 		# Add the scroll area to the main layout
 		self.layout = QVBoxLayout()
+		self.layout.addLayout(self.mask_layout)
 		self.layout.addWidget(self.scroll_area)
 		self.setLayout(self.layout)
 
@@ -140,3 +157,9 @@ class ImagePanel(QWidget):
 			if isinstance(image_widget, ImageWidget):
 				image_widgets.append(image_widget)
 		return image_widgets
+
+	def get_mask_transparency(self):
+		mask_field_val = self.mask_field.text()
+		if mask_field_val == ".":
+			mask_field_val = 0
+		return float(mask_field_val)

@@ -1,7 +1,6 @@
 from PIL import Image
 from time import time
 from math import sqrt
-import numpy as np
 
 
 def timecheck(func):
@@ -13,13 +12,13 @@ def timecheck(func):
 	return _wrapper
 
 
-def apply_filters(opt, img1_name, img2=None, channels="RGB"):
+def apply_filters(opt, img1_name=None, img2=None, channels="RGB", transparency=0.5):
 	if opt == "None":
 		return channelImage(img1_name, channels)
 	elif opt == "Square mask image":
-		return maskImage(img1_name, "S", channels)
+		return maskImage(img2, "S", channels, transparency)
 	elif opt == "Circle mask image":
-		return maskImage(img1_name, "C", channels)
+		return maskImage(img2, "C", channels, transparency)
 	elif opt == "Add":
 		return sumImage(img1_name, img2, channels)
 	elif opt == "Multiply":
@@ -36,6 +35,7 @@ def apply_filters(opt, img1_name, img2=None, channels="RGB"):
 
 @timecheck
 def channelImage(img1_name, channels):
+	print(img1_name)
 	if img1_name is None:
 		return None
 
@@ -276,32 +276,31 @@ def make_square_mask(w, transparency=0):
 
 
 @timecheck
-def maskImage(img_name, mask_mode, channels="RGB", mask_transparency=0.5):
-    if img_name is None:
-        return None
+def maskImage(img, mask_mode, channels="RGB", mask_transparency=0.5):
+	if img is None:
+		return None
 
-    img = Image.open(img_name)
-    w = max(img.width, img.height)
+	w = max(img.width, img.height)
 
-    if mask_mode == "C":
-        make_circle_mask(w, transparency=mask_transparency)
-    elif mask_mode == "S":
-        make_square_mask(w, transparency=mask_transparency)
+	if mask_mode == "C":
+		make_circle_mask(w, transparency=mask_transparency)
+	elif mask_mode == "S":
+		make_square_mask(w, transparency=mask_transparency)
 
-    out = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    mask = Image.open("img/mask.png")
+	out = Image.new("RGBA", img.size, (0, 0, 0, 0))
+	mask = Image.open("img/mask.png")
 
-    mask_x = int((img.width - mask.width) / 2)
-    mask_y = int((img.height - mask.height) / 2)
+	mask_x = int((img.width - mask.width) / 2)
+	mask_y = int((img.height - mask.height) / 2)
 
-    out.paste(img, (0, 0))
-    out.paste(mask, (mask_x, mask_y), mask)
+	out.paste(img, (0, 0))
+	out.paste(mask, (mask_x, mask_y), mask)
 
-    out = out.convert("RGB")
+	out = out.convert("RGB")
 
-    img.close()
-    mask.close()
-    return out
+	img.close()
+	mask.close()
+	return out
 
 
 @timecheck
@@ -314,55 +313,33 @@ def rescale_image(img1, img2):
 
 	return img1.resize((w, h)), img2.resize((w, h))
 
-# @timecheck
-# def grad_transform(img_name: str, points: dict[float, float]):
-# 	if img_name is None:
-# 		return None
-
-# 	img = Image.open(img_name)
-# 	pixels = img.load()
-
-# 	out = Image.new("RGB", img.size)
-# 	pixels_out = out.load()
-
-# 	new_brightness = {}
-# 	for x in range(256):
-# 		new_brightness[x] = bezier_curve(x, points)
-
-# 	for x in range(img.width):
-# 		for y in range(img.height):
-# 			r, g, b = pixels[x, y]
-# 			brightness = (r+g+b)//3
-
-# 			nb = new_brightness[brightness]
-# 			r_out = min(int(r*nb/brightness), 255) if brightness else 0
-# 			g_out = min(int(g*nb/brightness), 255) if brightness else 0
-# 			b_out = min(int(b*nb/brightness), 255) if brightness else 0
-
-# 			pixels_out[x, y] = (r_out, g_out, b_out)
-
-# 	img.close()
-# 	return out
-
-# works 10! times faster
 @timecheck
 def grad_transform(img_name: str, points: dict[float, float]):
 	if img_name is None:
 		return None
-	
+
 	img = Image.open(img_name)
-	pixels = np.array(img)
-	
-	unique_brightness = np.unique(pixels.sum(axis=2)//3)
-	new_brightness = np.vectorize(bezier_curve)(unique_brightness, points)
-	
-	pixels_out = np.empty_like(pixels)
-	pixels_out[:,:,0] = np.interp(pixels[:,:,0], unique_brightness, new_brightness)
-	pixels_out[:,:,1] = np.interp(pixels[:,:,1], unique_brightness, new_brightness)
-	pixels_out[:,:,2] = np.interp(pixels[:,:,2], unique_brightness, new_brightness)
-	
-	out = Image.fromarray(pixels_out, mode="RGB")
-	
+	pixels = img.load()
+
+	out = Image.new("RGB", img.size)
+	pixels_out = out.load()
+
+	new_brightness = {}
+	for x in range(256):
+		new_brightness[x] = bezier_curve(x, points)
+
+	for x in range(img.width):
+		for y in range(img.height):
+			r, g, b = pixels[x, y]
+			brightness = (r+g+b)//3
+
+			nb = new_brightness[brightness]
+			r_out = min(int(r*nb/brightness), 255) if brightness else 0
+			g_out = min(int(g*nb/brightness), 255) if brightness else 0
+			b_out = min(int(b*nb/brightness), 255) if brightness else 0
+
+			pixels_out[x, y] = (r_out, g_out, b_out)
+
 	img.close()
 	return out
 

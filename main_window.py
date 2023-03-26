@@ -4,7 +4,8 @@ from PyQt5.QtWidgets import (QApplication, QFileDialog, QHBoxLayout,
 							QLabel, QMainWindow, QSizePolicy, QSlider,
 							QVBoxLayout, QWidget, QPushButton, QFrame,
 							QDesktopWidget)
-import img_process as imgp
+# import img_process as imgp
+import img_process_fast as imgp
 from image_panel import ImagePanel
 from gisto import GistoWindow, GistoWidget
 from functools import partial
@@ -131,31 +132,32 @@ class MainWindow(QMainWindow):
 		return image.scaled(width, height, Qt.KeepAspectRatio)
 
 	def apply_filters(self):
-		images = self.image_panel.get_image_widgets()
+		images = self.image_panel.get_image_widgets()[::-1]
 		out = None
 
+		if len(images) == 0:
+			self.time_label.setText("0 seconds")
+			return
+
 		t1 = time()
-		# if any image added
-		if len(images):
-			opt = images[0].comboBox.currentText()
-			img_path = images[0].image_path
-			channels = images[0].channel
-			out = imgp.apply_filters(opt=opt, img1_name=img_path, img2=None, channels=channels)
-		
-		# for rest of the images
-		# option - the value of the comboBox
-		# out - the PIL.Image object - result of image processing
-		# channels - value of the slider under the image
-		for i in range(1, len(images)):
-			opt = images[i].comboBox.currentText()
+
+		for i in range(len(images)):
+			if i == 0:
+				opt = "None"
+			else:
+				opt = images[i-1].comboBox.currentText()
+
 			img_path = images[i].image_path
 			channels = images[i].channel
 			out = imgp.apply_filters(opt=opt, img1_name=img_path, img2=out, channels=channels)
 
+		if images[-1].comboBox.currentText() != "None":
+			opt = images[-1].comboBox.currentText()
+			transparency = self.image_panel.get_mask_transparency()
+			out = imgp.apply_filters(opt=opt, img2=out, transparency=transparency)
+
 		self.time_label.setText("%.6f seconds"%(time()-t1))
 
-		# if out image is gotten, creating a name for the image, saving it
-		# then opening it to display on the window
 		self.save_output(out)
 
 
@@ -178,8 +180,8 @@ class MainWindow(QMainWindow):
 			self.save_output(out)
 
 	def save_output(self, out_img, name=None):
-		if not out_img:
-			pass
+		if out_img is None:
+			return
 
 		if name is None:
 			name = 'img/out_' + str(int(time())) + '.jpg'
