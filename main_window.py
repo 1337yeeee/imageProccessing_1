@@ -77,6 +77,10 @@ class MainWindow(QMainWindow):
 		gisto_make_action = gisto_menu.addAction("Make")
 		gisto_make_action.triggered.connect(self.make_gisto_)
 
+		binar_menu = self.menuBar().addMenu("&Binary")
+		binar_action = binar_menu.addAction("Binary action")
+		binar_action.triggered.connect(lambda x: print(x))
+
 		# Set the main widget and layout
 		self.setCentralWidget(self.main_widget)
 
@@ -189,4 +193,3 @@ class MainWindow(QMainWindow):
 		print('saving output image into ' + name)
 		out_img.save(name)
 		self.open_image_out(name)
-

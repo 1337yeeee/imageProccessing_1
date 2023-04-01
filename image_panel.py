@@ -2,7 +2,6 @@ from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QLabel,
 	QComboBox, QScrollArea, QFrame, QPushButton, QSlider, QFrame, QLineEdit)
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, QSize
-from mask_menu import MaskMenu
 
 
 class ImageWidget(QWidget):
