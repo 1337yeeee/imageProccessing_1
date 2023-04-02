@@ -65,3 +65,36 @@ def otsuCriteria(img_name):
 	out.show()
 
 	return out
+
+
+def niblackCriteria(img_name, window_size=21, k=-0.2):
+	if img_name is None:
+		return None
+
+	img = makeGrey(img_name)
+	pixels = np.array(img)
+	w, h = pixels.shape
+
+	# creating an array full of 0 shape like pixels
+	binary = np.zeros_like(pixels)
+
+	for i in range(w):
+		for j in range(h):
+			# setting edges
+			left_i = i - window_size if i - window_size > 0 else 0
+			right_i = i + window_size if i + window_size < w else w-1
+			left_j = j - window_size if j - window_size > 0 else 0
+			right_j = j + window_size if j + window_size < h else h-1	
+			
+			mean = np.mean(pixels[left_i:right_i+1, left_j:right_j+1])
+			std = np.std(pixels[left_i:right_i+1, left_j:right_j+1])
+			# Calculate threshold
+			t = mean + k * std
+
+			# Create binary image
+			binary[i, j] = 255 if pixels[i, j] > t else 0
+	
+	out = Image.fromarray(binary, mode='L')
+	out.show()
+	
+	return out
