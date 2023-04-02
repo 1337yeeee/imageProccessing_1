@@ -35,3 +35,33 @@ def gavrCriteria(img_name):
 	out = Image.fromarray(pixels.astype(np.uint8), mode="L")
 	out.show()
 	return out
+
+
+@timecheck
+def otsuCriteria(img_name):
+	if img_name is None:
+		return None
+
+	img = makeGrey(img_name)
+	pixels = np.array(img)
+
+	hist, _ = np.histogram(pixels, bins=range(257))
+	norm_hist = hist / pixels.size
+
+	# cумма hist[i] [1, 2, 3, 4, 5] -> [ 1  3  6 10 15]
+	cumsum_hist = np.cumsum(norm_hist)
+	# cумма hist[i]*i [1, 2, 3, 4, 5] -> [ 0  2  8 20 40]
+	cumsum_mean = np.cumsum(np.arange(256) * norm_hist)
+
+	mu = cumsum_mean[-1]  # overall mean
+
+	var_b = cumsum_hist * (1 - cumsum_hist) * (cumsum_mean - mu)**2
+	threshold = np.argmax(var_b)
+
+	bin_img = np.zeros_like(pixels)
+	bin_img[pixels > threshold] = 255
+
+	out = Image.fromarray(bin_img, mode="L")
+	out.show()
+
+	return out
