@@ -19,3 +19,19 @@ def makeGrey(img_name):
 
 	img = Image.open(img_name)
 	return img.convert('L')
+
+
+@timecheck
+def gavrCriteria(img_name):
+	if img_name is None:
+		return None
+
+	img = makeGrey(img_name)
+	pixels = np.array(img)
+	t = np.average(pixels)
+	pixels = (pixels >= t) * 255
+
+	img.close()
+	out = Image.fromarray(pixels.astype(np.uint8), mode="L")
+	out.show()
+	return out
