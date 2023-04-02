@@ -1,16 +1,7 @@
 from PIL import Image
 from time import time
 import numpy as np
-# from binar_process import *
-
-
-def timecheck(func):
-	def _wrapper(*args, **kwargs):
-		t1 = time()
-		result = func(*args, **kwargs)
-		print(f'{func.__name__} worked for {time()-t1} seconds')
-		return result
-	return _wrapper
+from binar_process import *
 
 
 def apply_filters(opt, img1_name=None, img2=None, channels="RGB", transparency=0.5):
