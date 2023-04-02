@@ -89,3 +89,51 @@ def niblackCriteria(img_name, window_size=43, k=-0.2):
 	out.show()
 
 	return out
+
+
+@timecheck
+def sauvolaCriteria(img_name, window_size=43, k=0.5, r=128):
+	if img_name is None:
+		return None
+
+	img = makeGrey(img_name)
+	pixels = np.array(img)
+
+	# Calculate local mean and standard deviation of pixels
+	local_mean = generic_filter(pixels, np.mean, size=window_size)
+	local_std = np.sqrt(generic_filter(pixels**2, np.mean, size=window_size) - local_mean**2)
+
+	# Calculate threshold
+	threshold = local_mean * (1 + k * ((local_std / r) - 1))
+
+	# Create binary image
+	binary = (pixels > threshold).astype(np.uint8) * 255
+	out = Image.fromarray(binary, mode='L')
+	out.show()
+
+	return out
+
+
+@timecheck
+def wolfCriteria(img_name, window_size=41, k=0.5, r=128):
+	if img_name is None:
+		return None
+	
+	img = makeGrey(img_name)
+	pixels = np.array(img)
+	
+	# Compute local mean
+	local_mean = generic_filter(pixels, np.mean, size=window_size)
+	
+	# Compute local variance
+	local_var = generic_filter(pixels, np.var, size=window_size)
+	
+	# Compute threshold
+	t = local_mean * (1 + k * (local_var / (r ** 2) - 1))    
+	
+	# Create binary image
+	binary = (pixels > t).astype(np.uint8) * 255
+	out = Image.fromarray(binary, mode='L')
+	out.show()
+	
+	return out
