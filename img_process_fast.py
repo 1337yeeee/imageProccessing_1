@@ -1,7 +1,7 @@
 from PIL import Image
 from time import time
 import numpy as np
-from binar_process import *
+from binar_process import timecheck, BinarIMG
 
 
 def apply_filters(opt, img1_name=None, img2=None, channels="RGB", transparency=0.5):

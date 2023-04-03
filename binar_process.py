@@ -35,6 +35,7 @@ class BinarIMG:
 		self.wolf = self.wolfCriteria()
 		self.niblack = self.niblackCriteria()
 		self.sauvola = self.sauvolaCriteria()
+		self.bradley = self.bradleyRothCriteria()
 
 	@timecheck
 	def gavrCriteria(self):
@@ -133,7 +134,32 @@ class BinarIMG:
 		
 		return out
 
-	# 36.61763095855713 seconds
+	@timecheck
+	def bradleyRothCriteria(self):
+		window_size = self.window_size
+		k = self.k
+		pixels = self.pixels
+		
+		# Calculate local mean
+		pad_width = window_size // 2
+		pixels_padded = np.pad(pixels, pad_width, mode='edge')
+		local_sum = np.cumsum(np.cumsum(pixels_padded, axis=0), axis=1)
+		local_sum = local_sum[window_size-1:-1, window_size-1:-1] + local_sum[:-(window_size), :-(window_size)] - local_sum[window_size-1:-1, :-(window_size)] - local_sum[:-(window_size), window_size-1:-1]
+		local_mean = local_sum / (window_size ** 2)
+
+		# Pad local_mean
+		local_mean_padded = np.pad(local_mean, ((0, 1), (0, 1)), mode='constant')
+
+		# Calculate threshold with an extra row and column of zeros
+		threshold = local_mean_padded * (1 - k)
+		threshold = np.pad(threshold, ((0, 1), (0, 1)), mode='edge')
+
+		# Create binary image
+		binary = (pixels > threshold[:-1, :-1]).astype(np.uint8) * 255
+		out = Image.fromarray(binary, mode='L')
+
+		return out
+
 	@timecheck
 	def calc_mean_std(self):
 		# Calculate local mean and standard deviation of pixels
@@ -148,4 +174,5 @@ class BinarIMG:
 			'niblack': 	self.niblack,
 			'sauvola': 	self.sauvola,
 			'wolf': 	self.wolf,
+			'bradley':	self.bradley,
 		}
