@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (QApplication, QFileDialog, QHBoxLayout,
 import img_process_fast as imgp
 from image_panel import ImagePanel
 from gisto import GistoWindow, GistoWidget
+from binar_window import BinarWindow
 from functools import partial
 from time import time
 
@@ -19,6 +20,7 @@ class MainWindow(QMainWindow):
 		self.image_out_path = None
 		self.gisto_window = None
 		self.gistogram = None
+		self.binar_window = None
 
 		# Create the main widget and layout
 		self.main_widget = QWidget()
@@ -79,7 +81,7 @@ class MainWindow(QMainWindow):
 
 		binar_menu = self.menuBar().addMenu("&Binary")
 		binar_action = binar_menu.addAction("Binary action")
-		binar_action.triggered.connect(lambda x: print(x))
+		binar_action.triggered.connect(self.new_binar_window)
 
 		# Set the main widget and layout
 		self.setCentralWidget(self.main_widget)
@@ -182,6 +184,16 @@ class MainWindow(QMainWindow):
 			out = imgp.grad_transform(self.image_out_path, points)
 			self.time_label.setText("%.6f seconds"%(time()-t1))
 			self.save_output(out)
+
+	def new_binar_window(self):
+		if self.binar_window is None and self.image_out_path:
+			self.binar_window = BinarWindow(self.image_out_path, self)
+			self.binar_window.show()
+			self.binar_window.closeEvent = lambda event: self.on_binar_window_closed(event)
+
+	def on_binar_window_closed(self, event):
+		self.binar_window = None
+		event.accept()
 
 	def save_output(self, out_img, name=None):
 		if out_img is None:

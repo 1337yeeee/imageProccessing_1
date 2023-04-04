@@ -23,10 +23,11 @@ def makeGrey(img_name):
 
 
 class BinarIMG:
+	@timecheck
 	def __init__(self, img_name, window_size=21, k=-0.2, r=128):
 		img = makeGrey(img_name)
 		self.pixels = np.array(img)
-		self.window_size = window_size
+		self.window_size = window_size if window_size%2 else window_size+1
 		self.k = k
 		self.r = r
 		self.local_mean, self.local_std = self.calc_mean_std()
