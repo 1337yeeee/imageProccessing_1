@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QLabel,
 	QLineEdit, QMainWindow, QPushButton)
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, QSize
 from binar_process import BinarIMG
 from PIL.ImageQt import ImageQt
@@ -14,7 +14,6 @@ class BinarImage(QWidget):
 		self.main_layout = QVBoxLayout()
 		
 		# Convert PIL Image to QImage
-		# qimage = QImage(img.tobytes(), img.size[0], img.size[1], QImage.Format_RGB888)
 		qimage = ImageQt(img)
 
 		# Create QLabel and set QPixmap from QImage

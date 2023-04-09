@@ -9,6 +9,7 @@ import img_process_fast as imgp
 from image_panel import ImagePanel
 from gisto import GistoWindow, GistoWidget
 from binar_window import BinarWindow
+from filtering_window import FilterWindow
 from functools import partial
 from time import time
 
@@ -21,6 +22,7 @@ class MainWindow(QMainWindow):
 		self.gisto_window = None
 		self.gistogram = None
 		self.binar_window = None
+		self.filter_window = None
 
 		# Create the main widget and layout
 		self.main_widget = QWidget()
@@ -71,7 +73,7 @@ class MainWindow(QMainWindow):
 		magic_add_img_action.setShortcut("Ctrl+O")
 		magic_add_img_action.triggered.connect(self.add_image_from_file)
 		magic_out_action = magic_menu.addAction("Out image")
-		magic_out_action.triggered.connect(lambda: self.open_image_out("img/in2.jpg"))
+		magic_out_action.triggered.connect(lambda: self.open_image_out("img/_in2.jpg"))
 
 		gisto_menu = self.menuBar().addMenu("&Gisto")
 		gisto_action = gisto_menu.addAction("Open gisto window")
@@ -82,6 +84,10 @@ class MainWindow(QMainWindow):
 		binar_menu = self.menuBar().addMenu("&Binary")
 		binar_action = binar_menu.addAction("Binary action")
 		binar_action.triggered.connect(self.new_binar_window)
+
+		filter_menu = self.menuBar().addMenu("&Filter")
+		filter_action = filter_menu.addAction("Filter action")
+		filter_action.triggered.connect(self.new_filter_window)
 
 		# Set the main widget and layout
 		self.setCentralWidget(self.main_widget)
@@ -96,7 +102,7 @@ class MainWindow(QMainWindow):
 		# Open a file dialog to select an image file
 		options = QFileDialog.Options()
 		# options |= QFileDialog.DontUseNativeDialog
-		file_paths, _ = QFileDialog.getOpenFileNames(self, "Select Image File", "", "Image Files (*.jpg *.jpeg)", options=options)
+		file_paths, _ = QFileDialog.getOpenFileNames(self, "Select Image File", "img", "Image Files (*.jpg *.jpeg)", options=options)
 
 		# If a file was selected, add it to the ImagePanel widget
 		if file_paths:
@@ -193,6 +199,17 @@ class MainWindow(QMainWindow):
 
 	def on_binar_window_closed(self, event):
 		self.binar_window = None
+		event.accept()
+
+	def new_filter_window(self):
+		if self.filter_window is None and self.image_out_path:
+			out_img = imgp.apply_filters('None', self.image_out_path)
+			self.filter_window = FilterWindow(out_img, self)
+			self.filter_window.show()
+			self.filter_window.closeEvent = lambda event: self.on_filter_window_closed(event)
+
+	def on_filter_window_closed(self, event):
+		self.filter_window = None
 		event.accept()
 
 	def save_output(self, out_img, name=None):
