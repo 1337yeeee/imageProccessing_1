@@ -147,6 +147,10 @@ class ImagePanel(QWidget):
 			self.image_layout.itemAt(0).widget().set_combo_box_items(False)
 		self.image_layout.insertWidget(0, image_widget)
 
+	def get_image_path_or_null(self):
+		if self.image_layout.count():
+			return self.image_layout.itemAt(0).widget().image_path
+
 	def get_image_widgets(self):
 		# get all the image widgets added to the image layout
 		image_widgets = []

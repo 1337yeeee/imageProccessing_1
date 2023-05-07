@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QHBoxLayout,
 							QLabel, QMainWindow, QSizePolicy, QSlider,
@@ -10,6 +10,7 @@ from image_panel import ImagePanel
 from gisto import GistoWindow, GistoWidget
 from binar_window import BinarWindow
 from filtering_window import FilterWindow
+from freq_window import FreqWindow
 from functools import partial
 from time import time
 
@@ -23,6 +24,7 @@ class MainWindow(QMainWindow):
 		self.gistogram = None
 		self.binar_window = None
 		self.filter_window = None
+		self.freq_window = None
 
 		# Create the main widget and layout
 		self.main_widget = QWidget()
@@ -89,6 +91,10 @@ class MainWindow(QMainWindow):
 		filter_action = filter_menu.addAction("Filter action")
 		filter_action.triggered.connect(self.new_filter_window)
 
+		freq_menu = self.menuBar().addMenu("&Frequency")
+		freq_action = freq_menu.addAction("Frequency filter action")
+		freq_action.triggered.connect(self.new_freq_window)
+
 		# Set the main widget and layout
 		self.setCentralWidget(self.main_widget)
 
@@ -124,9 +130,7 @@ class MainWindow(QMainWindow):
 			# self.out_layout.addWidget(self.gistogram)
 			self.out_layout.insertWidget(1, self.gistogram)
 
-			image = QImage(file_name)
-			image = self.scale_image(image, 250, 250)
-			self.out_label.setPixmap(QPixmap.fromImage(image))
+			self.out_label.setPixmap(QPixmap(file_name).scaled(QSize(250, 250), aspectRatioMode=Qt.KeepAspectRatio))
 
 	def scale_image(self, image, max_width, max_height):
 		width, height = image.width(), image.height()
@@ -212,8 +216,23 @@ class MainWindow(QMainWindow):
 		self.filter_window = None
 		event.accept()
 
+	def new_freq_window(self):
+		if self.freq_window is None and self.image_out_path:
+			out_img = imgp.apply_filters('None', self.image_out_path)
+			self.freq_window = FreqWindow(out_img, self)
+			self.freq_window.show()
+			self.freq_window.closeEvent = lambda event: self.on_freq_window_closed(event)
+
+	def on_freq_window_closed(self, event):
+		self.freq_window = None
+		event.accept()
+
 	def save_output(self, out_img, name=None):
 		if out_img is None:
+			return
+
+		if name_ := self.image_panel.get_image_path_or_null():
+			self.open_image_out(name_)
 			return
 
 		if name is None:
