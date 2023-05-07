@@ -19,14 +19,11 @@ def make(image):
 def DFT2D(pixels):
 	M, N = np.shape(pixels)
 	dft2d = np.zeros((M, N), dtype=complex)
-	for l in range(N):
-		for k in range(M):
-			sum_matrix = 0.0
-			for n in range(N):
-				for m in range(M):
-					e = cmath.exp(- 2j * np.pi * (float(l * m) / N + float(k * n) / M))
-					sum_matrix += pixels[m, n] * e
-			dft2d[k, l] = sum_matrix
+	for k in range(M):
+		for l in range(N):
+			m, n = np.meshgrid(np.arange(M), np.arange(N), indexing='ij')
+			e = np.exp(-2j * np.pi * (l * m / N + k * n / M))
+			dft2d[k, l] = np.sum(pixels * e)
 	return dft2d
 
 
@@ -34,13 +31,9 @@ def DFT2D(pixels):
 def IDFT2D(dft2d):
 	M, N = dft2d.shape
 	pixels = np.zeros((M, N))
-	for n in range(N):
-		for m in range(M):
-			sum_ = 0.0
-			for l in range(N):
-				for k in range(M):
-					e = cmath.exp(2j * np.pi * (float(l * m) / N + float(k * n) / M))
-					sum_ += dft2d[k, l] * e
-			pixel = sum_.real / (M*N)
-			pixels[m, n] = pixel
+	for m in range(M):
+		for n in range(N):
+			k, l = np.meshgrid(np.arange(M), np.arange(N), indexing='ij')
+			e = np.exp(2j * np.pi * (l * m / N + k * n / M))
+			pixels[m, n] = np.sum(dft2d * e).real / (M*N)
 	return pixels
